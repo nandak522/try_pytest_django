@@ -10,6 +10,7 @@ data:
   CONNECTION_MAX_AGE: "60"
   RDS_MASTER_HOST: "mysql-svc.mysql.svc.cluster.local"
   RDS_MASTER_PORT: "3306"
+  TERM: "xterm-256color"
 kind: ConfigMap
 metadata:
   labels:
@@ -29,7 +30,7 @@ spec:
     spec:
       volumes:
       - hostPath:
-          path: "/Users/nanda/tryouts/try_pytest_django/src/test_pytest"
+          path: "/Users/nanda/sources/try_pytest_django/src/test_pytest"
           type: Directory
         name: test-pytest-source
       containers:
