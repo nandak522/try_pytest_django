@@ -1,0 +1,89 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: trying-pytest
+
+---
+apiVersion: v1
+data:
+  DJANGO_SETTINGS_MODULE: test_pytest.settings
+  CONNECTION_MAX_AGE: "60"
+  RDS_MASTER_HOST: "mysql-svc.mysql.svc.cluster.local"
+  RDS_MASTER_PORT: "3306"
+kind: ConfigMap
+metadata:
+  labels:
+    app: hello-world
+  name: hello-world
+  namespace: trying-pytest
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: trying-pytest
+  name: hello-world
+spec:
+  replicas: 1
+  template:
+    spec:
+      volumes:
+      - hostPath:
+          path: "/Users/nanda/tryouts/try_pytest_django/src/test_pytest"
+          type: Directory
+        name: test-pytest-source
+      containers:
+      - name: hello-world
+        args:
+          - "/app/venv/bin/python3"
+          - "/app/src/test_pytest/manage.py"
+          - "runserver"
+          - "0.0.0.0:8000"
+        envFrom:
+        - configMapRef:
+            name: hello-world
+        imagePullPolicy: IfNotPresent
+        image: try_pytest:v3
+        ports:
+        - protocol: TCP
+          name: pythonport
+          containerPort: 8000
+        volumeMounts:
+          - mountPath: "/app/src/test_pytest/"
+            name: test-pytest-source
+        livenessProbe:
+          initialDelaySeconds: 10
+          tcpSocket:
+            port: pythonport
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: "/polls/"
+            port: pythonport
+          timeoutSeconds: 1
+          periodSeconds: 5
+          successThreshold: 1
+          initialDelaySeconds: 10
+          failureThreshold: 2
+    metadata:
+      labels:
+        name: hello-world
+  selector:
+    matchLabels:
+      name: hello-world
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: hello-world
+  namespace: trying-pytest
+spec:
+  ports:
+  - protocol: TCP
+    targetPort: pythonport
+    port: 3333
+    name: http-helloworldsvcport
+  selector:
+    name: hello-world
+  type: NodePort
